@@ -98,3 +98,31 @@ python tests/run_tests_distributed.py tests/unittests/ --num_ranks 2 -v
 - Add or update tests for any code you change.
 - Update documentation under `docs/` for user-visible behavior changes.
 - Fill in the PR description with a clear summary of what changed and why.
+
+## Cursor Cloud specific instructions
+
+### Hardware constraints
+
+This cloud VM has **no AMD GPUs**. PyTorch (ROCm), Triton, and the HIP runtime are unavailable. Consequently:
+
+- `import iris` will fail at runtime (it imports `triton` and loads `libamdhip64.so`).
+- All tests (`tests/`) require `torch` + 2 AMD GPUs and **cannot run** here.
+- The test runner `tests/run_tests_distributed.py` uses `torchrun` with NCCL backend.
+
+### What you CAN do without GPUs
+
+| Task | Command |
+|------|---------|
+| Lint | `ruff check . --fix` |
+| Format | `ruff format .` |
+| Build docs | `cd docs && python3 -m sphinx -b html -d _build/doctrees -D language=en . _build/html` |
+| Serve docs | `cd docs && python3 -m http.server 8080 -d _build/html` |
+| Static type check | `mypy iris/` (partial — will error on torch/triton imports) |
+
+### PATH note
+
+Dev tools install to `~/.local/bin`. Ensure `export PATH="$HOME/.local/bin:$PATH"` is active (already set in the VM's `.bashrc`).
+
+### Docs build
+
+Sphinx dependencies are listed in `docs/sphinx/requirements.txt`. The build produces HTML at `docs/_build/html/`. The `docs/build_docs.sh` script creates a venv — for cloud agents, install deps globally instead to avoid venv complexity.
